@@ -1,0 +1,128 @@
+{
+  "entities": {
+    "Product": {
+      "title": "Product",
+      "description": "Represents a product in the store",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "price": { "type": "string" },
+        "category": { "type": "string" },
+        "image": { "type": "string" },
+        "secretSource": { "type": "string", "description": "Link delivered to customer on order completion" },
+        "secretInstructions": { "type": "string", "description": "Detailed information delivered to customer" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "price", "category", "image"]
+    },
+    "Order": {
+      "title": "Order",
+      "description": "Represents a customer order",
+      "type": "object",
+      "properties": {
+        "customerName": { "type": "string" },
+        "email": { "type": "string" },
+        "phone": { "type": "string" },
+        "items": { "type": "array" },
+        "totalPrice": { "type": "number" },
+        "paymentMethod": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "processing", "completed", "cancelled"] },
+        "senderNumber": { "type": "string" },
+        "transactionId": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["customerName", "email", "phone", "items", "totalPrice", "paymentMethod", "status"]
+    },
+    "Review": {
+      "title": "Review",
+      "description": "Customer review for a product",
+      "type": "object",
+      "properties": {
+        "productId": { "type": "string" },
+        "parentId": { "type": "string", "description": "ID of the parent review if this is a reply" },
+        "rating": { "type": "number" },
+        "comment": { "type": "string" },
+        "customerName": { "type": "string" },
+        "reply": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["productId", "comment", "customerName"]
+    },
+    "AbandonedCart": {
+      "title": "Abandoned Cart",
+      "description": "Visitor session with items in cart but no checkout",
+      "type": "object",
+      "properties": {
+        "visitorId": { "type": "string" },
+        "email": { "type": "string" },
+        "ip": { "type": "string" },
+        "items": { "type": "array" },
+        "totalPrice": { "type": "number" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      }
+    },
+    "Admin": {
+      "title": "Admin",
+      "description": "Authorized administrator user",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string" },
+        "level": { "type": "string", "enum": ["Super Admin", "Manager", "Editor"] },
+        "name": { "type": "string" },
+        "addedBy": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["email", "level"]
+    },
+    "ServicePlan": {
+      "title": "Service Plan",
+      "description": "Represents a pricing plan for services",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "id": { "type": "string", "description": "Slug for identification" },
+        "description": { "type": "string" },
+        "trial": { "type": "string" },
+        "features": { "type": "array", "items": { "type": "string" } },
+        "color": { "type": "string" },
+        "accent": { "type": "string" },
+        "buttonClass": { "type": "string" },
+        "monthlyPriceOriginal": { "type": "string" },
+        "monthlyPrice": { "type": "string" },
+        "yearlyPriceOriginal": { "type": "string" },
+        "yearlyPrice": { "type": "string" },
+        "badgeMonthly": { "type": "string" },
+        "badgeYearly": { "type": "string" },
+        "order": { "type": "number" }
+      },
+      "required": ["name", "id", "monthlyPrice", "yearlyPrice"]
+    }
+  },
+  "firestore": {
+    "/products/{productId}": {
+      "schema": "Product",
+      "description": "Collection of products"
+    },
+    "/orders/{orderId}": {
+      "schema": "Order",
+      "description": "Collection of orders"
+    },
+    "/reviews/{reviewId}": {
+      "schema": "Review",
+      "description": "Collection of product reviews"
+    },
+    "/abandoned_carts/{cartId}": {
+      "schema": "AbandonedCart",
+      "description": "Collection of abandoned cart sessions"
+    },
+    "/admins/{email}": {
+      "schema": "Admin",
+      "description": "Authorized admin users"
+    },
+    "/service_plans/{planId}": {
+      "schema": "ServicePlan",
+      "description": "Dynamic pricing plans"
+    }
+  }
+}

@@ -1,0 +1,70 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (request.auth.token.email == 'imranhosine52@gmail.com' || exists(/databases/$(database)/documents/admins/$(request.auth.token.email))) && request.auth.token.email_verified == true;
+    }
+
+    function isSuperAdmin() {
+      return isSignedIn() && request.auth.token.email == 'imranhosine52@gmail.com' && request.auth.token.email_verified == true;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    // Admins collection
+    match /admins/{email} {
+      allow read: if isSignedIn();
+      allow write: if isSuperAdmin();
+    }
+
+    // Products collection
+    match /products/{productId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Orders collection
+    match /orders/{orderId} {
+      allow read: if isAdmin() || (isSignedIn() && resource.data.email == request.auth.token.email);
+      allow create: if true; // Allow anyone to place an order
+      allow update, delete: if isAdmin();
+    }
+
+    // Settings collection
+    match /settings/{settingId} {
+      allow read: if true; // Needed for checkout email notification
+      allow write: if isAdmin();
+    }
+
+    // Abandoned Carts collection
+    match /abandoned_carts/{cartId} {
+      allow read, write: if true;
+    }
+
+    // Product Reviews collection
+    match /reviews/{reviewId} {
+      allow read: if true;
+      allow create: if true;
+      allow update: if (isAdmin() || (request.auth != null && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['reply', 'replies']))); 
+      allow delete: if isAdmin();
+    }
+
+    // Service Plans collection
+    match /service_plans/{planId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+  }
+}
