@@ -806,7 +806,7 @@ function Dashboard({ orders, products }: { orders: Order[], products: Product[] 
                   <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-xs font-bold">{order.customerName[0]}</div>
                   <div>
                     <p className="text-sm font-semibold">{order.customerName}</p>
-                    <p className="text-xs text-gray-400 font-medium tracking-tight">৳ {order.totalPrice}</p>
+                    <p className="text-[10px] text-gray-400 font-medium tracking-tight">৳ {order.totalPrice} • {order.createdAt?.toDate?.()?.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }) || 'Recently'}</p>
                   </div>
                 </div>
                 <StatusBadge status={order.status} />
@@ -1141,8 +1141,8 @@ function OrdersList({ orders, products, emailSettings, onViewOrder }: { orders: 
                     <p className="text-xs font-bold uppercase text-blue-600">{order.paymentMethod}</p>
                   </div>
                   <div className="space-y-1">
-                    <p className="text-[10px] font-bold uppercase text-gray-400 tracking-wider">Order Date</p>
-                    <p className="text-xs font-semibold text-gray-700">{order.createdAt?.toDate().toLocaleDateString() || 'Recently'}</p>
+                    <p className="text-[10px] font-bold uppercase text-gray-400 tracking-wider">Order Date & Time</p>
+                    <p className="text-xs font-semibold text-gray-700">{order.createdAt?.toDate?.()?.toLocaleString('en-US', { hour12: true }) || 'Recently'}</p>
                   </div>
                 </div>
 
