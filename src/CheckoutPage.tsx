@@ -22,6 +22,7 @@ import { db, auth } from './lib/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { handleFirestoreError, OperationType } from './lib/firestoreUtils';
 import emailjs from '@emailjs/browser';
+import { sendTelegramNotification } from './lib/telegram';
 
 export default function CheckoutPage() {
   const { productId } = useParams();
@@ -85,6 +86,7 @@ export default function CheckoutPage() {
 
   // Cached settings
   const [cachedSettings, setCachedSettings] = useState<any>(null);
+  const [telegramSettings, setTelegramSettings] = useState<any>(null);
 
   React.useEffect(() => {
     const fetchSettings = async () => {
@@ -93,8 +95,13 @@ export default function CheckoutPage() {
         if (settingsSnap.exists()) {
           setCachedSettings(settingsSnap.data());
         }
+
+        const tgSnap = await getDoc(doc(db, 'settings', 'telegram'));
+        if (tgSnap.exists()) {
+          setTelegramSettings(tgSnap.data());
+        }
       } catch (err) {
-        console.warn("Could not pre-fetch email settings", err);
+        console.warn("Could not pre-fetch notification settings", err);
       }
     };
     fetchSettings();
@@ -183,6 +190,39 @@ export default function CheckoutPage() {
       };
 
       sendEmail();
+
+      // Send Telegram Notification
+      const sendTelegram = () => {
+        if (!telegramSettings?.botToken || !telegramSettings?.chatId) return;
+
+        const itemsList = checkoutProducts.map(p => 
+          `• ${p.title} (x${cart.find(item => item.id === p.id)?.quantity || 1})`
+        ).join('\n');
+
+        const message = `
+🛍 <b>New Order Received!</b>
+
+🆔 <b>Order ID:</b> #${orderId}
+👤 <b>Customer:</b> ${name}
+📧 <b>Email:</b> ${email}
+📱 <b>Phone:</b> ${phone}
+
+📦 <b>Items:</b>
+${itemsList}
+
+💰 <b>Total Price:</b> ${displayPrice}
+💳 <b>Payment:</b> ${paymentMethod?.toUpperCase()}
+🔢 <b>Sender No:</b> ${senderNumber}
+📄 <b>TrxID:</b> ${transactionId}
+
+🕒 <b>Time:</b> ${new Date().toLocaleString('en-US', { hour12: true })}
+        `.trim();
+
+        sendTelegramNotification(telegramSettings.botToken, telegramSettings.chatId, message)
+          .catch(err => console.error('Telegram notification failed:', err));
+      };
+
+      sendTelegram();
       
     } catch (error) {
       setIsProcessing(false);

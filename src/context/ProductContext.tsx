@@ -43,7 +43,8 @@ export const ProductProvider: React.FC<{ children: React.ReactNode }> = ({ child
             id: doc.id,
           } as Product;
         });
-        setProducts(prodData);
+        // Merge Firestore products with local ones to show both
+        setProducts([...prodData, ...featuredProducts, ...bestSellers]);
       }
       setLoading(false);
     }, (err) => {

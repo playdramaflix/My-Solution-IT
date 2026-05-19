@@ -87,6 +87,10 @@ export default function AdminPanel() {
     templateId: 'template_8q1laec',
     publicKey: 'cKTbuKI3xG3e6-tdF'
   });
+  const [telegramSettings, setTelegramSettings] = useState({
+    botToken: '',
+    chatId: ''
+  });
   const [siteSettings, setSiteSettings] = useState({
     siteName: 'MY SOLUTION IT',
     siteSubtitle: 'Your Trusted Business Partner',
@@ -94,7 +98,8 @@ export default function AdminPanel() {
     bannerUrl: 'https://images.unsplash.com/photo-1517048676732-d65bc937f952?q=80&w=2070&auto=format&fit=crop',
     bannerTitle: 'Premium Tech Solutions',
     bannerDesc: 'Unlock premium features and services for your business at unbeatable prices.',
-    whatsappNumber: '8801700000000'
+    whatsappNumber: '8801700000000',
+    theme: 'modern'
   });
   
   // States for Modals
@@ -147,6 +152,17 @@ export default function AdminPanel() {
         }
       });
 
+      // Fetch Telegram Settings
+      const unsubTelegram = onSnapshot(doc(db, 'settings', 'telegram'), (docSnap) => {
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          setTelegramSettings({
+            botToken: data.botToken || '',
+            chatId: data.chatId || ''
+          });
+        }
+      });
+
       // Fetch Site Settings
       const unsubSite = onSnapshot(doc(db, 'settings', 'site'), (docSnap) => {
         if (docSnap.exists()) {
@@ -181,6 +197,7 @@ export default function AdminPanel() {
         unsubProducts();
         unsubOrders();
         unsubSettings();
+        unsubTelegram();
         unsubSite();
         unsubAbandoned();
         unsubReviews();
@@ -220,6 +237,34 @@ export default function AdminPanel() {
 
   const isSuperAdmin = user?.email === ADMIN_EMAIL;
   const isAdmin = isSuperAdmin || admins.some(a => a.email === user?.email);
+
+  // Theme-aware colors
+  const themeColors = {
+    modern: {
+      primary: 'bg-red-600',
+      text: 'text-red-600',
+      border: 'border-red-600',
+      ring: 'ring-red-100',
+      light: 'bg-red-50',
+      shadow: 'shadow-red-100'
+    },
+    luxury: {
+      primary: 'bg-amber-600',
+      text: 'text-amber-600',
+      border: 'border-amber-600',
+      ring: 'ring-amber-100',
+      light: 'bg-amber-50',
+      shadow: 'shadow-amber-100'
+    },
+    minimal: {
+      primary: 'bg-black',
+      text: 'text-black',
+      border: 'border-black',
+      ring: 'ring-gray-100',
+      light: 'bg-gray-50',
+      shadow: 'shadow-gray-100'
+    }
+  }[siteSettings.theme as 'modern' | 'luxury' | 'minimal' || 'modern'];
 
   if (!user || !isAdmin) {
     return (
@@ -285,8 +330,8 @@ export default function AdminPanel() {
       <header className="h-14 bg-black text-gray-300 flex items-center justify-between px-4 sticky top-0 z-[60] shadow-md">
         <div className="flex items-center gap-6">
           <div className="flex items-center gap-2 text-white">
-            <div className="w-6 h-6 bg-red-600 rounded flex items-center justify-center text-[10px] font-black tracking-tighter">ADMIN</div>
-            <span className="text-sm font-black tracking-widest uppercase hidden sm:inline">My Solution IT</span>
+            <div className={`w-6 h-6 ${themeColors.primary} rounded flex items-center justify-center text-[10px] font-black tracking-tighter`}>ADMIN</div>
+            <span className="text-sm font-black tracking-widest uppercase hidden sm:inline">{siteSettings.siteName || 'My Solution IT'}</span>
           </div>
           
           <div className="h-4 w-[1px] bg-gray-800" />
@@ -371,7 +416,7 @@ export default function AdminPanel() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as any)}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all ${activeTab === tab.id ? 'bg-red-600 text-white shadow-lg shadow-red-100' : 'text-gray-400 hover:text-black hover:bg-gray-50'}`}
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all ${activeTab === tab.id ? `${themeColors.primary} text-white shadow-lg ${themeColors.shadow}` : 'text-gray-400 hover:text-black hover:bg-gray-50'}`}
               >
                 <tab.icon className="w-4 h-4" />
                 {tab.label}
@@ -474,6 +519,7 @@ export default function AdminPanel() {
             <SettingsPanel 
                 siteSettings={siteSettings} 
                 emailSettings={emailSettings} 
+                telegramSettings={telegramSettings}
             />
           )}
         </AnimatePresence>
@@ -1451,8 +1497,14 @@ function ReviewsList({ reviews, products, onDelete }: { reviews: any[], products
   );
 }
 
-function SettingsPanel({ siteSettings, emailSettings }: { siteSettings: any, emailSettings: any }) {
-  const [activeSubTab, setActiveSubTab] = useState<'site' | 'email'>('site');
+function SettingsPanel({ siteSettings, emailSettings, telegramSettings }: { siteSettings: any, emailSettings: any, telegramSettings: any }) {
+  const [activeSubTab, setActiveSubTab] = useState<'site' | 'email' | 'telegram' | 'templates'>('site');
+
+  const themeColors = {
+    modern: { primary: 'bg-red-600', text: 'text-red-600', light: 'bg-red-50' },
+    luxury: { primary: 'bg-amber-600', text: 'text-amber-600', light: 'bg-amber-50' },
+    minimal: { primary: 'bg-black', text: 'text-black', light: 'bg-gray-50' }
+  }[siteSettings.theme as 'modern' | 'luxury' | 'minimal' || 'modern'];
 
   return (
     <motion.div 
@@ -1462,7 +1514,7 @@ function SettingsPanel({ siteSettings, emailSettings }: { siteSettings: any, ema
       className="space-y-8"
     >
       <div className="flex items-center gap-4">
-        <div className="w-12 h-12 bg-red-100 text-red-600 rounded-2xl flex items-center justify-center">
+        <div className={`w-12 h-12 ${themeColors.light} ${themeColors.text} rounded-2xl flex items-center justify-center`}>
             <Settings className="w-6 h-6" />
         </div>
         <div>
@@ -1471,28 +1523,241 @@ function SettingsPanel({ siteSettings, emailSettings }: { siteSettings: any, ema
         </div>
       </div>
 
-      <div className="flex gap-2 bg-white p-2 rounded-2xl border border-gray-100 w-fit">
+      <div className="flex flex-wrap gap-2 bg-white p-2 rounded-2xl border border-gray-100 w-fit">
         <button 
           onClick={() => setActiveSubTab('site')}
-          className={`px-6 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all ${activeSubTab === 'site' ? 'bg-black text-white' : 'text-gray-400 hover:text-black'}`}
+          className={`px-6 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all ${activeSubTab === 'site' ? `${themeColors.primary} text-white shadow-lg` : 'text-gray-400 hover:text-black'}`}
         >
           Site Branding
         </button>
         <button 
           onClick={() => setActiveSubTab('email')}
-          className={`px-6 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all ${activeSubTab === 'email' ? 'bg-black text-white' : 'text-gray-400 hover:text-black'}`}
+          className={`px-6 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all ${activeSubTab === 'email' ? `${themeColors.primary} text-white shadow-lg` : 'text-gray-400 hover:text-black'}`}
         >
           Email Config
+        </button>
+        <button 
+          onClick={() => setActiveSubTab('telegram')}
+          className={`px-6 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all ${activeSubTab === 'telegram' ? `${themeColors.primary} text-white shadow-lg` : 'text-gray-400 hover:text-black'}`}
+        >
+          Telegram Config
+        </button>
+        <button 
+          onClick={() => setActiveSubTab('templates')}
+          className={`px-6 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all ${activeSubTab === 'templates' ? `${themeColors.primary} text-white shadow-lg` : 'text-gray-400 hover:text-black'}`}
+        >
+          Templates
         </button>
       </div>
 
       <AnimatePresence mode="wait">
-        {activeSubTab === 'site' ? (
+        {activeSubTab === 'site' && (
           <SiteSettingsForm key="site" initialSettings={siteSettings} />
-        ) : (
+        )}
+        {activeSubTab === 'email' && (
           <EmailSettings key="email" initialSettings={emailSettings} />
         )}
+        {activeSubTab === 'telegram' && (
+          <TelegramSettings key="telegram" initialSettings={telegramSettings} />
+        )}
+        {activeSubTab === 'templates' && (
+          <TemplateSettings key="templates" initialSettings={siteSettings} />
+        )}
       </AnimatePresence>
+    </motion.div>
+  );
+}
+
+function TemplateSettings({ initialSettings }: { initialSettings: any, key?: string }) {
+  const [settings, setSettings] = useState(initialSettings);
+  const [isSaving, setIsSaving] = useState(false);
+
+  const themeColors = {
+    modern: { border: 'border-red-600', ring: 'ring-red-50', text: 'text-red-600' },
+    luxury: { border: 'border-amber-600', ring: 'ring-amber-50', text: 'text-amber-600' },
+    minimal: { border: 'border-black', ring: 'ring-gray-100', text: 'text-black' }
+  }[settings.theme as 'modern' | 'luxury' | 'minimal' || 'modern'];
+
+  useEffect(() => {
+    setSettings(initialSettings);
+  }, [initialSettings]);
+
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSaving(true);
+    try {
+      await updateDoc(doc(db, 'settings', 'site'), {
+        theme: settings.theme || 'modern',
+        updatedAt: firestoreTimestamp()
+      });
+      alert('Template updated successfully!');
+    } catch (err) {
+      console.error('Failed to update template:', err);
+      alert('Failed to update template.');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const templates = [
+    { id: 'modern', name: 'Modern Digital Store', desc: 'Perfect for scripts, themes and software assets.', icon: Zap, color: 'text-red-600', bg: 'bg-red-50' },
+    { id: 'luxury', name: 'Luxury Boutique', desc: 'Crafted for high-end clothing like Panjabis and suits.', icon: Star, color: 'text-amber-500', bg: 'bg-amber-50' },
+    { id: 'minimal', name: 'Minimal Brutalist', desc: 'Clean, bold and focused on high-quality visuals.', icon: LayoutDashboard, color: 'text-black', bg: 'bg-gray-100' },
+  ];
+
+  return (
+    <motion.div 
+      initial={{ opacity: 0, x: 20 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: -20 }}
+      className="max-w-4xl space-y-8"
+    >
+      <div className="flex items-center gap-4">
+        <div className="w-12 h-12 bg-indigo-100 text-indigo-600 rounded-2xl flex items-center justify-center">
+            <LayoutDashboard className="w-6 h-6" />
+        </div>
+        <div>
+            <h1 className="text-3xl font-bold tracking-tight text-gray-900">Website Templates</h1>
+            <p className="text-xs text-gray-400 font-semibold uppercase tracking-wider">Choose the look and feel of your store</p>
+        </div>
+      </div>
+
+      <div className="grid md:grid-cols-3 gap-6">
+        {templates.map((tpl) => (
+          <button
+            key={tpl.id}
+            onClick={() => setSettings({ ...settings, theme: tpl.id })}
+            className={`flex flex-col items-start text-left p-6 rounded-[2.5rem] border-2 transition-all ${settings.theme === tpl.id ? `${themeColors.border} bg-white ${themeColors.ring} shadow-xl ring-4` : 'border-gray-100 bg-white hover:border-gray-200'}`}
+          >
+            <div className={`w-12 h-12 ${tpl.bg} ${tpl.color} rounded-2xl flex items-center justify-center mb-4`}>
+              <tpl.icon className="w-6 h-6" />
+            </div>
+            <h3 className="font-bold text-gray-900 mb-2">{tpl.name}</h3>
+            <p className="text-xs text-gray-400 font-medium leading-relaxed mb-6">{tpl.desc}</p>
+            
+            <div className={`mt-auto px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest ${settings.theme === tpl.id ? `${tpl.id === 'minimal' ? 'bg-black' : tpl.bg.replace('bg-', 'bg-opacity-20 ')} ${tpl.color}` : 'bg-gray-50 text-gray-400'}`}>
+              {settings.theme === tpl.id ? 'Active' : 'Pick this'}
+            </div>
+          </button>
+        ))}
+      </div>
+
+      <div className="bg-white p-8 rounded-[3rem] border border-gray-100 shadow-sm flex items-center justify-between">
+        <div>
+          <p className="text-sm font-bold text-gray-900">Current Selection: <span className={`${themeColors.text} uppercase italic tracking-tighter`}>{settings.theme || 'Modern'}</span></p>
+          <p className="text-[10px] text-gray-400 font-medium">Click "Update" to apply the new design to your website.</p>
+        </div>
+        <button 
+          onClick={handleSave}
+          disabled={isSaving || settings.theme === initialSettings.theme}
+          className="px-10 py-4 bg-black text-white rounded-2xl font-bold uppercase tracking-widest text-[10px] hover:bg-gray-800 transition-all disabled:opacity-30"
+        >
+          {isSaving ? "Applying..." : "Update Template"}
+        </button>
+      </div>
+    </motion.div>
+  );
+}
+
+function TelegramSettings({ initialSettings }: { initialSettings: any, key?: string }) {
+  const [settings, setSettings] = useState(initialSettings);
+  const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    setSettings(initialSettings);
+  }, [initialSettings]);
+
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSaving(true);
+    try {
+      await updateDoc(doc(db, 'settings', 'telegram'), {
+        ...settings,
+        updatedAt: firestoreTimestamp()
+      }).catch(async (err) => {
+          if (err.code === 'not-found') {
+              const { setDoc } = await import('firebase/firestore');
+              await setDoc(doc(db, 'settings', 'telegram'), {
+                  ...settings,
+                  updatedAt: firestoreTimestamp()
+              });
+          } else {
+              throw err;
+          }
+      });
+      alert('Telegram settings updated successfully!');
+    } catch (err) {
+      console.error('Failed to update telegram settings:', err);
+      alert('Failed to update settings. Please try again.');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  return (
+    <motion.div 
+      initial={{ opacity: 0, x: 20 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: -20 }}
+      className="max-w-2xl space-y-8"
+    >
+      <div className="flex items-center gap-4">
+        <div className="w-12 h-12 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center">
+            <Send className="w-6 h-6" />
+        </div>
+        <div>
+            <h1 className="text-3xl font-bold tracking-tight text-gray-900">Telegram Config</h1>
+            <p className="text-xs text-gray-400 font-semibold uppercase tracking-wider">Manage order notifications</p>
+        </div>
+      </div>
+
+      <div className="bg-white p-8 md:p-10 rounded-[3rem] border border-gray-100 shadow-sm">
+        <form onSubmit={handleSave} className="space-y-6">
+          <div className="space-y-2">
+            <label className="text-[11px] font-bold uppercase tracking-wider text-gray-500 ml-1">Bot Token</label>
+            <input 
+              required
+              type="password" 
+              value={settings.botToken}
+              onChange={(e) => setSettings({...settings, botToken: e.target.value})}
+              className="w-full px-6 py-4 rounded-2xl border border-gray-100 bg-gray-50 focus:bg-white focus:border-red-600 focus:outline-none transition-all text-sm font-semibold"
+              placeholder="e.g. 123456789:ABCDE..."
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-[11px] font-bold uppercase tracking-wider text-gray-500 ml-1">Chat ID</label>
+            <input 
+              required
+              type="text" 
+              value={settings.chatId}
+              onChange={(e) => setSettings({...settings, chatId: e.target.value})}
+              className="w-full px-6 py-4 rounded-2xl border border-gray-100 bg-gray-50 focus:bg-white focus:border-red-600 focus:outline-none transition-all text-sm font-semibold"
+              placeholder="e.g. -123456789"
+            />
+          </div>
+
+          <button 
+            type="submit"
+            disabled={isSaving}
+            className="w-full py-5 bg-black text-white rounded-[2rem] font-bold uppercase tracking-[0.3em] text-xs hover:bg-gray-800 transition-all shadow-xl shadow-gray-100 disabled:opacity-50"
+          >
+            {isSaving ? "Saving..." : "Update Settings"}
+          </button>
+        </form>
+      </div>
+
+      <div className="bg-blue-50 border border-blue-100 rounded-3xl p-6 flex items-start gap-4">
+        <AlertCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+        <div className="space-y-1">
+            <h4 className="text-xs font-bold text-blue-800 tracking-tight">How to get these?</h4>
+            <div className="text-[11px] font-medium text-blue-600 leading-relaxed space-y-1">
+                <p>1. Message <a href="https://t.me/BotFather" target="_blank" rel="noopener noreferrer" className="underline font-bold">@BotFather</a> to create a bot and get the <b>Token</b>.</p>
+                <p>2. Add the bot to your group/channel and make it admin.</p>
+                <p>3. Use <a href="https://t.me/userinfobot" target="_blank" rel="noopener noreferrer" className="underline font-bold">@userinfobot</a> or similar to find your <b>Chat ID</b>.</p>
+            </div>
+        </div>
+      </div>
     </motion.div>
   );
 }

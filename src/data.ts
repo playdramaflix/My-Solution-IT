@@ -3,75 +3,119 @@ import { Product } from './types';
 export const featuredProducts: Product[] = [
   {
     id: 1,
-    title: "IDM (Internet Download Manager) Full Version",
-    category: "Digital Products",
-    price: "৳ 200.00",
-    image: "https://images.unsplash.com/photo-1633356122544-f134324a6cee?q=80&w=2070&auto=format&fit=crop",
-    description: "Experience blazing fast downloads with IDM. The industry leading download manager for windows.",
+    title: "Premium White Royal Cotton Panjabi",
+    category: "Royal Collection",
+    price: "৳ 4,500.00",
+    image: "https://images.unsplash.com/photo-1594938298603-c8148c4dae35?q=80&w=2080&auto=format&fit=crop",
+    description: "Exquisite white cotton Panjabi with intricate embroidery on the collar and cuffs. Perfect for special occasions.",
     stockStatus: 'In Stock',
-    sku: "IDM-001",
-    tags: ["Utility", "Software", "Windows"]
+    sku: "LUX-WH-001",
+    tags: ["Cotton", "Handmade"],
+    discount: "10%"
   },
   {
     id: 2,
-    title: "Canva Pro Official Premium Subscription",
-    category: "Digital Products",
-    price: "৳ 100.00",
-    image: "https://images.unsplash.com/photo-1626785774573-4b799315345d?q=80&w=2071&auto=format&fit=crop",
-    description: "Unlock all premium features of Canva and design like a pro. Perfect for social media and business graphics.",
+    title: "Royal Navy Embroidered Panjabi",
+    category: "Signature Series",
+    price: "৳ 5,800.00",
+    image: "https://images.unsplash.com/photo-1597983073493-88cd35cf93b0?q=80&w=2070&auto=format&fit=crop",
+    description: "Deep navy blue Panjabi with golden hand embroidery for a majestic look.",
     stockStatus: 'In Stock',
-    sku: "CANVA-PRO-01",
-    tags: ["Design", "Subscription", "Creative"]
+    sku: "SIG-NV-002",
+    tags: ["Navy", "Golden Embroidery"],
+    discount: "15%"
   },
   {
     id: 3,
-    title: "Canva Pro Premium Subscription",
-    category: "Subscription",
-    price: "৳ 50.00 – ৳ 100.00",
-    rating: 5,
-    image: "https://images.unsplash.com/photo-1611162617474-5b21e879e113?q=80&w=2074&auto=format&fit=crop",
-    description: "Flexible premium subscription plans for Canva. Choose the duration that fits your needs.",
+    title: "Imperial Saffron Silk Panjabi",
+    category: "Royal Collection",
+    price: "৳ 6,800.00",
+    image: "https://images.unsplash.com/photo-1621508654686-809f23efdaba?q=80&w=2070&auto=format&fit=crop",
+    description: "Luxurious pure silk Panjabi in a vibrant saffron hue. Breathable and elegant.",
     stockStatus: 'In Stock',
-    sku: "CANVA-PRO-FLEX",
-    tags: ["Design", "Subscription"]
+    sku: "LUX-SF-003",
+    tags: ["Silk", "Saffron"]
+  },
+  {
+    id: 4,
+    title: "Midnight Onyx Premium Panjabi",
+    category: "Signature Series",
+    price: "৳ 7,200.00",
+    image: "https://images.unsplash.com/photo-1627254504242-ce0574100787?q=80&w=2070&auto=format&fit=crop",
+    description: "Sleek black Panjabi with matte finish and minimal silver detailing.",
+    stockStatus: 'In Stock',
+    sku: "SIG-BLK-004",
+    tags: ["Black", "Minimal"],
+    discount: "5%"
+  },
+  {
+    id: 5,
+    title: "Maroon Wedding Heritage Edition",
+    category: "Heritage Collection",
+    price: "৳ 8,500.00",
+    image: "https://images.unsplash.com/photo-1598808503744-44cd27361a99?q=80&w=2070&auto=format&fit=crop",
+    description: "Rich maroon festive Panjabi, heavy work on neckline. Ideal for weddings.",
+    stockStatus: 'In Stock',
+    sku: "HER-MAR-005",
+    tags: ["Wedding", "Maroon"]
   }
 ];
 
 export const bestSellers: Product[] = [
   {
-    id: 4,
-    title: "Movieflix Mega Bundle Tools and Theme",
-    category: "Bundle offers",
-    price: "৳ 250.00 – ৳ 450.00",
-    discount: "-70%",
-    image: "https://images.unsplash.com/photo-1594909122845-11baa439b7bf?q=80&w=2070&auto=format&fit=crop",
-    description: "Get everything you need to start your movie streaming site with this mega bundle.",
-    stockStatus: 'In Stock',
-    sku: "MOVIE-BUNDLE",
-    tags: ["Web", "Theme", "Bundle"]
-  },
-  {
-    id: 5,
-    title: "Binance Dollar Recharge Buy Sell and Top Up",
-    category: "Subscription",
-    price: "৳ 440.00 – ৳ 6,850.00",
-    discount: "-67%",
-    image: "https://images.unsplash.com/photo-1621416894569-0f39ed31d247?q=80&w=1974&auto=format&fit=crop",
-    description: "Fast and secure Binance dollar recharge services. Buy, sell, and top up your wallet instantly.",
-    stockStatus: 'In Stock',
-    sku: "BINANCE-TOPUP",
-    tags: ["Crypto", "Wallet", "Service"]
-  },
-  {
     id: 6,
-    title: "Gopal Bhar & Nat-Boltu YouTube Upload Secret Course",
-    category: "Popular Courses",
-    price: "৳ 199.00",
-    image: "https://images.unsplash.com/photo-1611162616305-c69b3fa7fbe0?q=80&w=2074&auto=format&fit=crop",
-    description: "Learn the secrets of successful YouTube uploads with this specialized course.",
+    title: "Emerald Green Artisanal Panjabi",
+    category: "Royal Collection",
+    price: "৳ 4,200.00",
+    image: "https://images.unsplash.com/photo-1621508654157-194fd89d2d8e?q=80&w=2070&auto=format&fit=crop",
+    description: "Deep emerald green cotton blend Panjabi for a fresh and bold look.",
     stockStatus: 'In Stock',
-    sku: "YT-COURSE-01",
-    tags: ["Education", "YouTube", "Marketing"]
+    sku: "LUX-GRN-006",
+    tags: ["Green", "Cotton Blend"]
+  },
+  {
+    id: 7,
+    title: "Platinum Grey Classic Kurta",
+    category: "Heritage Collection",
+    price: "৳ 3,800.00",
+    image: "https://images.unsplash.com/photo-1594938374182-f89340058862?q=80&w=2071&auto=format&fit=crop",
+    description: "Sophisticated grey kurta for regular elegance and office events.",
+    stockStatus: 'In Stock',
+    sku: "HER-GRY-007",
+    tags: ["Grey", "Classy"]
+  },
+  {
+    id: 8,
+    title: "Sky Blue Casual Linen Panjabi",
+    category: "Signature Series",
+    price: "৳ 3,500.00",
+    image: "https://images.unsplash.com/photo-1632148757143-67c4ecda2e03?q=80&w=1974&auto=format&fit=crop",
+    description: "Light and airy sky blue linen Panjabi for summer comfort.",
+    stockStatus: 'In Stock',
+    sku: "SIG-SKY-008",
+    tags: ["Summer", "Linen"]
+  },
+  {
+    id: 9,
+    title: "Sandstone Earthy Texture Panjabi",
+    category: "Royal Collection",
+    price: "৳ 4,900.00",
+    image: "https://images.unsplash.com/photo-1633356122544-f134324a6cee?q=80&w=2070&auto=format&fit=crop",
+    description: "Natural earthy toned Panjabi with a unique textured weave.",
+    stockStatus: 'In Stock',
+    sku: "LUX-SAN-009",
+    tags: ["Textured", "Modern"]
+  },
+  {
+    id: 10,
+    title: "Charcoal Grey Silk Blend Kurta",
+    category: "Signature Series",
+    price: "৳ 5,500.00",
+    image: "https://images.unsplash.com/photo-1626785774573-4b799315345d?q=80&w=2071&auto=format&fit=crop",
+    description: "Premium charcoal grey kurta with silk shine, perfect for evening gatherings.",
+    stockStatus: 'In Stock',
+    sku: "SIG-CHA-010",
+    tags: ["Silk Blend", "Evening"]
   }
 ];
 
