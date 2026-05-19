@@ -15,6 +15,17 @@ export interface Product {
   tags?: string[];
 }
 
+export interface Post {
+  id?: string;
+  title: string;
+  content: string;
+  image?: string;
+  author?: string;
+  category?: string;
+  createdAt: any;
+  status: 'published' | 'draft';
+}
+
 export interface Order {
   id?: string;
   customerName: string;

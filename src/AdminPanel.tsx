@@ -64,19 +64,21 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import emailjs from '@emailjs/browser';
-import { Product, Order } from './types';
+import { Product, Order, Post } from './types';
 import { handleFirestoreError, OperationType } from './lib/firestoreUtils';
 import { featuredProducts, bestSellers } from './data';
 import { serverTimestamp as firestoreTimestamp } from 'firebase/firestore';
+import { sendTelegramNotification } from './lib/telegram';
 
 const ADMIN_EMAIL = 'imranhosine52@gmail.com';
 
 export default function AdminPanel() {
   const [user, setUser] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'products' | 'orders' | 'settings' | 'abandoned' | 'reviews' | 'admins' | 'services'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'products' | 'posts' | 'orders' | 'settings' | 'abandoned' | 'reviews' | 'admins' | 'services'>('dashboard');
   
   const [products, setProducts] = useState<Product[]>([]);
+  const [posts, setPosts] = useState<Post[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [abandonedCarts, setAbandonedCarts] = useState<any[]>([]);
   const [reviews, setReviews] = useState<any[]>([]);
@@ -105,6 +107,8 @@ export default function AdminPanel() {
   // States for Modals
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [isPostModalOpen, setIsPostModalOpen] = useState(false);
+  const [editingPost, setEditingPost] = useState<Post | null>(null);
   const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
 
@@ -133,6 +137,12 @@ export default function AdminPanel() {
         const prodData = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id })) as Product[];
         setProducts(prodData);
       }, (err) => handleFirestoreError(err, OperationType.LIST, 'products'));
+
+      const qPosts = query(collection(db, 'posts'), orderBy('createdAt', 'desc'));
+      const unsubPosts = onSnapshot(qPosts, (snapshot) => {
+        const postData = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id })) as Post[];
+        setPosts(postData);
+      }, (err) => handleFirestoreError(err, OperationType.LIST, 'posts'));
 
       const qOrders = query(collection(db, 'orders'), orderBy('createdAt', 'desc'));
       const unsubOrders = onSnapshot(qOrders, (snapshot) => {
@@ -195,6 +205,7 @@ export default function AdminPanel() {
 
       return () => {
         unsubProducts();
+        unsubPosts();
         unsubOrders();
         unsubSettings();
         unsubTelegram();
@@ -406,6 +417,7 @@ export default function AdminPanel() {
             {[
               { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
               { id: 'products', label: 'Products', icon: Package },
+              { id: 'posts', label: 'Blog Posts', icon: MessageCircle },
               { id: 'orders', label: 'Orders', icon: ShoppingBag },
               { id: 'services', label: 'Services', icon: Zap },
               { id: 'abandoned', label: 'Abandoned', icon: Trash2 },
@@ -436,6 +448,24 @@ export default function AdminPanel() {
           <main className="flex-1 p-6 md:p-8 overflow-y-auto bg-gray-50/50">
         <AnimatePresence mode="wait">
           {activeTab === 'dashboard' && <Dashboard orders={orders} products={products} />}
+          {activeTab === 'posts' && (
+            <PostsList 
+              posts={posts} 
+              onAdd={() => { setEditingPost(null); setIsPostModalOpen(true); }}
+              onEdit={(p) => { setEditingPost(p); setIsPostModalOpen(true); }}
+              onDelete={(id, title) => {
+                setDeleteConfirm({
+                  isOpen: true,
+                  id,
+                  type: 'Post',
+                  label: title,
+                  onConfirm: async () => {
+                    await deleteDoc(doc(db, 'posts', id));
+                  }
+                });
+              }}
+            />
+          )}
           {activeTab === 'services' && (
             <ServicesManagement 
               plans={servicePlans} 
@@ -594,6 +624,16 @@ export default function AdminPanel() {
         <ProductModal 
           product={editingProduct} 
           onClose={() => setIsProductModalOpen(false)} 
+          telegramSettings={telegramSettings}
+        />
+      )}
+
+      {/* Post Modal */}
+      {isPostModalOpen && (
+        <PostModal 
+          post={editingPost} 
+          onClose={() => setIsPostModalOpen(false)} 
+          telegramSettings={telegramSettings}
         />
       )}
 
@@ -2025,7 +2065,7 @@ function EmailSettings({ initialSettings }: { initialSettings: any, key?: string
   );
 }
 
-function ProductModal({ product, onClose }: { product: Product | null, onClose: () => void }) {
+function ProductModal({ product, onClose, telegramSettings }: { product: Product | null, onClose: () => void, telegramSettings: any }) {
   const [formData, setFormData] = useState({
     title: product?.title || '',
     category: product?.category || 'Gameloft Store',
@@ -2112,6 +2152,20 @@ function ProductModal({ product, onClose }: { product: Product | null, onClose: 
           ...formData,
           createdAt: firestoreTimestamp()
         });
+
+        // Telegram Notification
+        if (telegramSettings?.botToken && telegramSettings?.chatId) {
+            const message = `<b>🛍️ New Product Added!</b>\n\n` +
+                          `<b>Title:</b> ${formData.title}\n` +
+                          `<b>Price:</b> ${formData.price}\n` +
+                          `<b>Category:</b> ${formData.category}\n\n` +
+                          `<a href="${window.location.origin}/product/${formData.title.toLowerCase().replace(/\s+/g, '-')}">View on Store</a>`;
+            try {
+                await sendTelegramNotification(telegramSettings.botToken, telegramSettings.chatId, message);
+            } catch (tErr) {
+                console.error("Telegram notification failed", tErr);
+            }
+        }
       }
       onClose();
     } catch (err) {
@@ -2724,6 +2778,222 @@ function ConfirmDialog({
             className="w-full py-4 bg-gray-50 text-gray-400 rounded-2xl font-black uppercase tracking-widest text-[10px] hover:text-black transition-all"
           >
             Cancel
+          </button>
+        </div>
+      </motion.div>
+    </div>
+  );
+}
+
+function PostsList({ posts, onAdd, onEdit, onDelete }: { 
+  posts: Post[], 
+  onAdd: () => void, 
+  onEdit: (p: Post) => void,
+  onDelete: (id: string, title: string) => void
+}) {
+  return (
+    <motion.div 
+      initial={{ opacity: 0, x: 20 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: -20 }}
+      className="space-y-8"
+    >
+      <div className="flex items-center justify-between">
+        <h1 className="text-3xl font-bold tracking-tight">Blog Posts <span className="text-gray-300 ml-1 font-medium">({posts.length})</span></h1>
+        <button 
+          onClick={onAdd}
+          className="flex items-center justify-center gap-2 px-6 py-3 bg-red-600 text-white rounded-2xl font-bold uppercase tracking-widest text-[10px] hover:bg-black transition-all shadow-lg shadow-red-100"
+        >
+          <Plus className="w-4 h-4" /> Add Post
+        </button>
+      </div>
+
+      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {posts.map((post, index) => (
+          <div key={post.id} className="bg-white rounded-[2.5rem] border border-gray-100 overflow-hidden shadow-sm hover:shadow-xl transition-all group" data-aos="fade-up" data-aos-delay={index * 50}>
+            <div className="aspect-video bg-gray-50 relative overflow-hidden">
+                <img src={post.image || 'https://images.unsplash.com/photo-1499750310107-5fef28a66643?q=80&w=2070&auto=format&fit=crop'} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-all duration-700" />
+                <div className="absolute top-4 left-4">
+                    <span className={`px-3 py-1 bg-white/90 backdrop-blur-md rounded-full text-[8px] font-black uppercase tracking-widest ${post.status === 'published' ? 'text-green-600' : 'text-amber-600'}`}>
+                        {post.status}
+                    </span>
+                </div>
+            </div>
+            <div className="p-8 space-y-4">
+                <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-red-600 bg-red-50 px-2 py-0.5 rounded">{post.category || 'Fashion'}</span>
+                    <span className="text-[10px] font-medium text-gray-400">{post.createdAt?.toDate?.()?.toLocaleDateString() || 'Recently'}</span>
+                </div>
+                <h3 className="text-lg font-bold text-gray-900 group-hover:text-red-600 transition-colors line-clamp-2">{post.title}</h3>
+                
+                <div className="flex items-center justify-between pt-4 border-t border-gray-50">
+                    <div className="flex gap-2">
+                        <button onClick={() => onEdit(post)} className="p-2 bg-gray-50 hover:bg-black hover:text-white rounded-xl transition-all">
+                            <Edit className="w-4 h-4" />
+                        </button>
+                        <button onClick={() => onDelete(post.id!, post.title)} className="p-2 bg-gray-50 hover:bg-red-600 hover:text-white rounded-xl transition-all">
+                            <Trash2 className="w-4 h-4" />
+                        </button>
+                    </div>
+                </div>
+            </div>
+          </div>
+        ))}
+      </div>
+      {posts.length === 0 && (
+        <div className="text-center py-20 bg-white rounded-[3rem] border border-dashed border-gray-200">
+            <MessageCircle className="w-16 h-16 text-gray-100 mx-auto mb-4" />
+            <h3 className="text-xl font-bold text-gray-900">No posts yet</h3>
+            <p className="text-gray-400 text-sm font-medium">Start sharing your thoughts with your customers.</p>
+        </div>
+      )}
+    </motion.div>
+  );
+}
+
+function PostModal({ post, onClose, telegramSettings }: { post: Post | null, onClose: () => void, telegramSettings: any }) {
+  const [formData, setFormData] = useState({
+    title: post?.title || '',
+    content: post?.content || '',
+    category: post?.category || 'Fashion',
+    image: post?.image || '',
+    status: post?.status || 'published',
+    author: post?.author || 'Admin',
+  });
+
+  const [isSaving, setIsSaving] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSaving(true);
+    try {
+      if (post) {
+        await updateDoc(doc(db, 'posts', post.id!), { ...formData });
+      } else {
+        await addDoc(collection(db, 'posts'), {
+          ...formData,
+          createdAt: firestoreTimestamp()
+        });
+        
+        // Telegram Notification for new post
+        if (telegramSettings?.botToken && telegramSettings?.chatId) {
+            const message = `<b>🆕 New Blog Post Added!</b>\n\n` +
+                          `<b>Title:</b> ${formData.title}\n` +
+                          `<b>Category:</b> ${formData.category}\n` +
+                          `<b>Status:</b> ${formData.status}\n\n` +
+                          `<a href="${window.location.origin}/">View Website</a>`;
+            try {
+                await sendTelegramNotification(telegramSettings.botToken, telegramSettings.chatId, message);
+            } catch (tErr) {
+                console.error("Telegram notification failed", tErr);
+            }
+        }
+      }
+      onClose();
+    } catch (err) {
+      handleFirestoreError(err, OperationType.WRITE, 'posts');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-[100] flex items-center justify-center p-4">
+      <motion.div 
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.95 }}
+        className="bg-white w-full max-w-2xl rounded-[3rem] shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
+      >
+        <div className="p-8 border-b border-gray-50 flex items-center justify-between flex-shrink-0">
+          <div>
+            <h2 className="text-2xl font-black">{post ? 'Edit Post' : 'Create New Post'}</h2>
+            <p className="text-xs text-gray-400 font-semibold uppercase tracking-widest">Post details & publishing</p>
+          </div>
+          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full transition-all text-gray-400">
+            <X className="w-6 h-6" />
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="p-8 space-y-6 overflow-y-auto flex-1 custom-scrollbar">
+          <div className="grid md:grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">Title</label>
+              <input 
+                required
+                value={formData.title}
+                onChange={(e) => setFormData({...formData, title: e.target.value})}
+                placeholder="Ex: 5 Best Panjabis for 2024"
+                className="w-full px-6 py-4 rounded-2xl border border-gray-100 bg-gray-50 focus:bg-white focus:border-red-600 focus:outline-none transition-all text-sm font-bold"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">Category</label>
+              <input 
+                required
+                value={formData.category}
+                onChange={(e) => setFormData({...formData, category: e.target.value})}
+                placeholder="Ex: Fashion Trends"
+                className="w-full px-6 py-4 rounded-2xl border border-gray-100 bg-gray-50 focus:bg-white focus:border-red-600 focus:outline-none transition-all text-sm font-bold"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">Featured Image URL</label>
+            <input 
+              value={formData.image}
+              onChange={(e) => setFormData({...formData, image: e.target.value})}
+              placeholder="https://images.unsplash.com/..."
+              className="w-full px-6 py-4 rounded-2xl border border-gray-100 bg-gray-50 focus:bg-white focus:border-red-600 focus:outline-none transition-all text-sm font-bold"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">Content</label>
+            <textarea 
+              required
+              rows={8}
+              value={formData.content}
+              onChange={(e) => setFormData({...formData, content: e.target.value})}
+              placeholder="Write your story here..."
+              className="w-full px-6 py-4 rounded-2xl border border-gray-100 bg-gray-50 focus:bg-white focus:border-red-600 focus:outline-none transition-all text-sm font-medium resize-none"
+            />
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">Status</label>
+              <select 
+                value={formData.status}
+                onChange={(e) => setFormData({...formData, status: e.target.value as any})}
+                className="w-full px-6 py-4 rounded-2xl border border-gray-100 bg-gray-50 focus:bg-white focus:border-red-600 focus:outline-none transition-all text-sm font-bold"
+              >
+                <option value="published">Published</option>
+                <option value="draft">Draft</option>
+              </select>
+            </div>
+            <div className="space-y-2">
+              <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">Author</label>
+              <input 
+                value={formData.author}
+                onChange={(e) => setFormData({...formData, author: e.target.value})}
+                className="w-full px-6 py-4 rounded-2xl border border-gray-100 bg-gray-50 focus:bg-white focus:border-red-600 focus:outline-none transition-all text-sm font-bold"
+              />
+            </div>
+          </div>
+        </form>
+
+        <div className="p-8 border-t border-gray-50 flex gap-4 flex-shrink-0">
+          <button type="button" onClick={onClose} className="flex-1 py-4 text-xs font-black uppercase tracking-widest text-gray-400 hover:text-black transition-all">
+            Cancel
+          </button>
+          <button 
+            onClick={handleSubmit}
+            disabled={isSaving}
+            className="flex-1 py-4 bg-black text-white rounded-2xl font-bold uppercase tracking-widest text-xs hover:bg-gray-800 transition-all disabled:opacity-50"
+          >
+            {isSaving ? "Publishing..." : (post ? 'Update Post' : 'Add Post')}
           </button>
         </div>
       </motion.div>

@@ -784,8 +784,10 @@ function MinimalHome() {
 }
 
 function LuxuryHome() {
-  const { products } = useProducts();
+  const { products, posts } = useProducts();
   const { settings } = useSiteSettings();
+
+  const latestPosts = posts.filter(p => p.status === 'published').slice(0, 3);
 
   return (
     <main className="bg-[#0a0a0a] text-gray-300 min-h-screen">
@@ -917,6 +919,48 @@ function LuxuryHome() {
           </Link>
         </div>
       </section>
+
+      {/* The Journal Section */}
+      {latestPosts.length > 0 && (
+        <section className="py-32 max-w-7xl mx-auto px-6 border-t border-white/5">
+          <div className="space-y-4 mb-16 text-center">
+            <span className="text-[10px] font-black uppercase tracking-[0.5em] text-amber-500/60">The Journal</span>
+            <h2 className="text-4xl md:text-6xl font-serif text-white tracking-tight italic">Legacy Stories</h2>
+          </div>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-12">
+            {latestPosts.map((post, idx) => (
+              <motion.article 
+                key={post.id}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ delay: idx * 100 }}
+                className="group cursor-pointer"
+              >
+                <div className="aspect-[16/10] overflow-hidden bg-zinc-900 border border-white/5 mb-8">
+                  <img 
+                    src={post.image || "https://images.unsplash.com/photo-1499750310107-5fef28a66643?q=80&w=2070&auto=format&fit=crop"} 
+                    alt={post.title}
+                    className="w-full h-full object-cover grayscale opacity-50 group-hover:grayscale-0 group-hover:opacity-100 group-hover:scale-105 transition-all duration-700"
+                  />
+                </div>
+                <div className="space-y-4">
+                  <div className="flex items-center gap-4">
+                    <span className="text-[8px] font-black uppercase tracking-widest text-amber-500">{post.category}</span>
+                    <span className="text-[8px] font-bold uppercase tracking-widest text-gray-600">Admin</span>
+                  </div>
+                  <h3 className="text-2xl font-serif text-white group-hover:text-amber-500 transition-colors leading-tight">
+                    {post.title}
+                  </h3>
+                  <p className="text-xs text-gray-500 line-clamp-2 leading-relaxed font-medium italic">
+                    {post.content}
+                  </p>
+                </div>
+              </motion.article>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* Philosophy Section */}
       <section className="py-32 border-t border-white/5 bg-zinc-950/50">
