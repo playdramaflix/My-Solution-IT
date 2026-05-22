@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { collection, query, orderBy, onSnapshot, addDoc, serverTimestamp, getDocs } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { Product, Post } from '../types';
-import { featuredProducts, bestSellers } from '../data';
+import { allProducts } from '../data';
 import { handleFirestoreError, OperationType } from '../lib/firestoreUtils';
 
 interface ProductContextType {
@@ -27,7 +27,7 @@ export const ProductProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const timeoutId = setTimeout(() => {
       if (isMounted && loading) {
         console.warn("Firestore responsive timeout - using fallback");
-        setProducts([...featuredProducts, ...bestSellers]);
+        setProducts(allProducts);
         setLoading(false);
       }
     }, 4000);
@@ -37,7 +37,7 @@ export const ProductProvider: React.FC<{ children: React.ReactNode }> = ({ child
       if (!isMounted) return;
 
       if (snapshot.empty) {
-        setProducts([...featuredProducts, ...bestSellers]);
+        setProducts(allProducts);
       } else {
         const prodData = snapshot.docs.map(doc => {
           const data = doc.data();
@@ -46,15 +46,15 @@ export const ProductProvider: React.FC<{ children: React.ReactNode }> = ({ child
             id: doc.id,
           } as Product;
         });
-        // Merge Firestore products with local ones to show both
-        setProducts([...prodData, ...featuredProducts, ...bestSellers]);
+        // Show only Firestore products once populated so they are 100% editable
+        setProducts(prodData);
       }
       setLoading(false);
     }, (err) => {
       clearTimeout(timeoutId);
       if (!isMounted) return;
       console.warn("Firestore products access error:", err.message);
-      setProducts([...featuredProducts, ...bestSellers]);
+      setProducts(allProducts);
       setLoading(false);
     });
 

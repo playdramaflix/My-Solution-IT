@@ -66,7 +66,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import emailjs from '@emailjs/browser';
 import { Product, Order, Post } from './types';
 import { handleFirestoreError, OperationType } from './lib/firestoreUtils';
-import { featuredProducts, bestSellers } from './data';
+import { featuredProducts, bestSellers, digitalProducts } from './data';
 import { serverTimestamp as firestoreTimestamp } from 'firebase/firestore';
 import { sendTelegramNotification } from './lib/telegram';
 
@@ -317,10 +317,9 @@ export default function AdminPanel() {
   }
 
   const handleSeedData = async () => {
-    if (products.length > 0) return;
-    if (confirm('Initialize store with sample products?')) {
+    if (confirm('আপনি কি সব ডেমো পাঞ্জাবি এবং ডিজিটাল প্রোডাক্ট ডাটাবেজে ইমপোর্ট করতে চান? এতে করে সব প্রোডাক্ট এডমিন প্যানেল দিয়ে কন্ট্রোল ও এডিটিং করতে পারবেন।')) {
       try {
-        const allInitial = [...featuredProducts, ...bestSellers];
+        const allInitial = [...featuredProducts, ...bestSellers, ...digitalProducts];
         for (const p of allInitial) {
           const { id, ...dataWithoutId } = p as any; // Remove local numeric ID
           await addDoc(collection(db, 'products'), {
@@ -328,7 +327,7 @@ export default function AdminPanel() {
             createdAt: firestoreTimestamp()
           });
         }
-        alert('Products seeded successfully!');
+        alert('সব ডেমো প্রোডাক্ট সফলভাবে ডাটাবেজে ইমপোর্ট করা হয়েছে! এখন আপনি Products পেজ থেকে এগুলো এডিট বা ডিলিট করতে পারবেন।');
       } catch (err) {
         handleFirestoreError(err, OperationType.CREATE, 'products');
       }
@@ -942,14 +941,12 @@ function ProductsList({ products, onAdd, onEdit, onSeed, onDelete }: {
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold tracking-tight">Products <span className="text-gray-300 ml-1 font-medium">({products.length})</span></h1>
         <div className="flex gap-3">
-          {products.length === 0 && (
-            <button 
-              onClick={onSeed}
-              className="flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-2xl font-bold uppercase tracking-widest text-[10px] hover:bg-black transition-all shadow-lg shadow-blue-100"
-            >
-              Initialize Data
-            </button>
-          )}
+          <button 
+            onClick={onSeed}
+            className="flex items-center justify-center gap-2 px-6 py-3 bg-amber-600 text-white rounded-2xl font-bold uppercase tracking-widest text-[10px] hover:bg-black transition-all shadow-lg shadow-amber-100"
+          >
+            Import Demo Products
+          </button>
           <button 
             onClick={onAdd}
             className="flex items-center justify-center gap-2 px-6 py-3 bg-red-600 text-white rounded-2xl font-bold uppercase tracking-widest text-[10px] hover:bg-black transition-all shadow-lg shadow-red-100"
